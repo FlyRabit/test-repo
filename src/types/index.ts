@@ -26,4 +26,4 @@ export interface ArticleStats {
   date: string;
 }
 
-export type NavItem = 'editor' | 'images' | 'publish' | 'dashboard' | 'account';
+export type NavItem = 'editor' | 'images' | 'publish' | 'dashboard' | 'ai' | 'account';

@@ -7,6 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 from xhs_service import xhs_service
+from gemini_service import gemini_service
 
 app = FastAPI(title="小红书运营系统 API")
 
@@ -39,6 +40,15 @@ class SearchInput(BaseModel):
 class CommentInput(BaseModel):
     content: str
 
+class AIBeautifyInput(BaseModel):
+    content: str
+
+class AIGenerateInput(BaseModel):
+    topic: str
+
+class AINewsInput(BaseModel):
+    news: str
+
 
 # ---------- Health ----------
 
@@ -49,6 +59,7 @@ def health():
         "connected": xhs_service.is_connected,
         "sdk": "ReaJason/xhs 0.2.13",
         "auth_method": "cookie",
+        "gemini_configured": gemini_service.is_configured,
     }
 
 
@@ -209,6 +220,53 @@ def comment_note(note_id: str, body: CommentInput):
     try:
         data = xhs_service.comment_note(note_id, body.content)
         return {"success": True, "data": data}
+    except Exception as e:
+        traceback.print_exc()
+        raise HTTPException(500, str(e))
+
+
+# ---------- AI / Gemini ----------
+
+@app.post("/api/ai/beautify")
+def ai_beautify(body: AIBeautifyInput):
+    if not body.content.strip():
+        raise HTTPException(400, "内容不能为空")
+    try:
+        result = gemini_service.beautify(body.content)
+        return {"success": True, "data": result}
+    except Exception as e:
+        traceback.print_exc()
+        raise HTTPException(500, str(e))
+
+@app.post("/api/ai/generate")
+def ai_generate(body: AIGenerateInput):
+    if not body.topic.strip():
+        raise HTTPException(400, "主题不能为空")
+    try:
+        result = gemini_service.generate(body.topic)
+        return {"success": True, "data": result}
+    except Exception as e:
+        traceback.print_exc()
+        raise HTTPException(500, str(e))
+
+@app.post("/api/ai/news")
+def ai_fetch_news(body: AIGenerateInput):
+    if not body.topic.strip():
+        raise HTTPException(400, "主题不能为空")
+    try:
+        result = gemini_service.fetch_news(body.topic)
+        return {"success": True, "data": result}
+    except Exception as e:
+        traceback.print_exc()
+        raise HTTPException(500, str(e))
+
+@app.post("/api/ai/news-to-note")
+def ai_news_to_note(body: AINewsInput):
+    if not body.news.strip():
+        raise HTTPException(400, "新闻内容不能为空")
+    try:
+        result = gemini_service.news_to_note(body.news)
+        return {"success": True, "data": result}
     except Exception as e:
         traceback.print_exc()
         raise HTTPException(500, str(e))

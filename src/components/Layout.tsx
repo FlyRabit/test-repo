@@ -1,5 +1,5 @@
 import { NavLink, Outlet } from 'react-router-dom';
-import { FileEdit, Image, Send, BarChart3, User, CheckCircle } from 'lucide-react';
+import { FileEdit, Image, Send, BarChart3, User, CheckCircle, Sparkles } from 'lucide-react';
 import { useAuth } from '../store/authStore';
 import type { NavItem } from '../types';
 
@@ -7,6 +7,7 @@ const navItems: { key: NavItem; label: string; icon: React.ReactNode; path: stri
   { key: 'editor', label: '文案编辑', icon: <FileEdit size={20} />, path: '/' },
   { key: 'images', label: '图片排版', icon: <Image size={20} />, path: '/images' },
   { key: 'publish', label: '一键发布', icon: <Send size={20} />, path: '/publish' },
+  { key: 'ai', label: 'AI 创作', icon: <Sparkles size={20} />, path: '/ai' },
   { key: 'dashboard', label: '数据图表', icon: <BarChart3 size={20} />, path: '/dashboard' },
 ];
 

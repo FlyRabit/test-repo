@@ -30,7 +30,7 @@ export class ApiError extends Error {
 }
 
 export const api = {
-  health: () => request<{ status: string; connected: boolean; sdk: string; auth_method: string }>('/health'),
+  health: () => request<{ status: string; connected: boolean; sdk: string; auth_method: string; gemini_configured: boolean }>('/health'),
 
   auth: {
     setCookie: (cookie: string) =>
@@ -91,6 +91,29 @@ export const api = {
     suggest: (keyword: string) =>
       request(`/topics/suggest?keyword=${encodeURIComponent(keyword)}`),
   },
+
+  ai: {
+    beautify: (content: string) =>
+      request<{ success: boolean; data: AIResult }>('/ai/beautify', {
+        method: 'POST',
+        body: JSON.stringify({ content }),
+      }),
+    generate: (topic: string) =>
+      request<{ success: boolean; data: AIResult }>('/ai/generate', {
+        method: 'POST',
+        body: JSON.stringify({ topic }),
+      }),
+    fetchNews: (topic: string) =>
+      request<{ success: boolean; data: { news: NewsItem[] } }>('/ai/news', {
+        method: 'POST',
+        body: JSON.stringify({ topic }),
+      }),
+    newsToNote: (news: string) =>
+      request<{ success: boolean; data: AIResult }>('/ai/news-to-note', {
+        method: 'POST',
+        body: JSON.stringify({ news }),
+      }),
+  },
 };
 
 export interface XhsUserInfo {
@@ -117,6 +140,17 @@ export interface XhsUserInfo {
 export interface XhsNotesStats {
   note_count?: number;
   [key: string]: unknown;
+}
+
+export interface AIResult {
+  title: string;
+  content: string;
+  tags: string[];
+}
+
+export interface NewsItem {
+  title: string;
+  summary: string;
 }
 
 export interface UploadedFile {

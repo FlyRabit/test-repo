@@ -6,6 +6,7 @@ import EditorPage from './pages/EditorPage';
 import ImageLayoutPage from './pages/ImageLayoutPage';
 import PublishPage from './pages/PublishPage';
 import DashboardPage from './pages/DashboardPage';
+import AIGeneratorPage from './pages/AIGeneratorPage';
 import AccountPage from './pages/AccountPage';
 
 export default function App() {
@@ -18,6 +19,7 @@ export default function App() {
               <Route index element={<EditorPage />} />
               <Route path="images" element={<ImageLayoutPage />} />
               <Route path="publish" element={<PublishPage />} />
+              <Route path="ai" element={<AIGeneratorPage />} />
               <Route path="dashboard" element={<DashboardPage />} />
               <Route path="account" element={<AccountPage />} />
             </Route>
