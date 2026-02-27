@@ -17,7 +17,7 @@
 - Tailwind CSS 4
 - Recharts
 - React Router
-- Express.js（后端 API 代理）
+- Python FastAPI + [ReaJason/xhs](https://github.com/reajason/xhs) SDK（后端）
 
 ## 快速开始
 
@@ -26,7 +26,8 @@
 npm install
 
 # 安装后端依赖
-cd server && npm install && cd ..
+pip install -r server/requirements.txt
+python3 -m playwright install chromium
 
 # 启动前端开发服务器
 npm run dev
@@ -46,16 +47,14 @@ npm run build
 无需任何配置即可使用，发布和数据统计使用本地模拟。
 
 ### 联网模式（真实对接）
-1. 前往 [小红书开放平台](https://open.xiaohongshu.com) 注册开发者账号
-2. 创建应用并获取 App Key 和 App Secret
-3. 在应用中配置回调地址为：`http://localhost:3001/api/auth/callback`
-4. 复制 `.env.example` 为 `.env`，填入凭证：
-   ```
-   XHS_APP_KEY=你的AppKey
-   XHS_APP_SECRET=你的AppSecret
-   ```
-5. 启动后端服务器：`npm run dev:server`
-6. 在应用内点击侧栏底部的"账号管理"，完成 OAuth 授权
+
+基于 [ReaJason/xhs](https://github.com/reajason/xhs) 开源 SDK，使用 Cookie 认证方式连接真实小红书账号。
+
+1. 启动后端服务器：`npm run dev:server`
+2. 在 Chrome 浏览器中打开 [小红书网页版](https://www.xiaohongshu.com) 并登录
+3. 按 F12 打开开发者工具 → Network 标签 → 复制任意请求的 Cookie 字段
+4. 在应用内点击侧栏底部的"账号管理"，粘贴 Cookie 并连接
+5. 连接成功后即可使用真实发布、获取数据等功能
 
 ## 使用说明
 
@@ -76,9 +75,9 @@ npm run build
 │   ├── store/            # 状态管理
 │   ├── services/         # API 服务
 │   └── types/            # TypeScript 类型定义
-├── server/               # 后端 API 服务器
-│   ├── routes/           # API 路由
-│   └── lib/              # 工具库
-├── .env.example          # 环境变量模板
+├── server/               # Python FastAPI 后端
+│   ├── main.py           # FastAPI 服务入口
+│   ├── xhs_service.py    # xhs SDK 封装层
+│   └── requirements.txt  # Python 依赖
 └── vite.config.ts        # Vite 配置（含 API 代理）
 ```

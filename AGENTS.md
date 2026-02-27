@@ -2,30 +2,32 @@
 
 ## Cursor Cloud specific instructions
 
-小红书账号运营系统 — React SPA with optional Express backend for Xiaohongshu API integration. Frontend data persisted in browser `localStorage`; backend manages OAuth and API proxy.
+小红书账号运营系统 — React SPA + Python FastAPI backend with ReaJason/xhs SDK for real Xiaohongshu integration.
 
 ### Quick reference
 
 | Action | Command |
 |--------|---------|
 | Install frontend deps | `npm install` |
-| Install backend deps | `cd server && npm install` |
+| Install backend deps | `pip install -r server/requirements.txt && python3 -m playwright install chromium` |
 | Frontend dev server | `npm run dev` (Vite, default port 5173) |
-| Backend API server | `npm run dev:server` (Express, port 3001) |
+| Backend API server | `npm run dev:server` (FastAPI/uvicorn, port 3001) |
 | Lint | `npm run lint` |
 | Build | `npm run build` (`tsc -b && vite build`) |
+| Backend API docs | http://localhost:3001/docs (Swagger UI) |
 
 ### Architecture
 
 - **Frontend**: React 19 + Vite 7, proxies `/api/*` to backend (see `vite.config.ts`)
-- **Backend** (`server/`): Express.js with OAuth flow, request signing (MD5), and API proxy to `https://ark.xiaohongshu.com`
-- **Dual mode**: Works fully without backend (local mode); when backend is running with credentials, enables real Xiaohongshu API integration
-- Backend has its own `package.json` in `server/` — dependencies must be installed separately
+- **Backend** (`server/`): Python FastAPI with [ReaJason/xhs](https://github.com/reajason/xhs) SDK (Cookie-based auth, no official API)
+- **Dual mode**: Works without backend (local mode with localStorage); with backend + Cookie, enables real Xiaohongshu publishing and data
+- Backend uses Playwright headless Chromium for xhs SDK's JS signature generation
 
 ### Notes
 
 - **No test framework** is configured. Manual browser testing is the only option.
-- ESLint has 2 pre-existing errors and 1 warning in `src/store/useStore.tsx`. These are in existing code and do not block the build.
-- The dev server should be started with `--host 0.0.0.0` for access within the cloud VM: `npm run dev -- --host 0.0.0.0`.
-- Real Xiaohongshu API requires credentials (`XHS_APP_KEY`, `XHS_APP_SECRET`) in `.env` — see `.env.example`.
-- Backend sessions stored in memory (restart clears all sessions).
+- ESLint has pre-existing lint errors in `src/store/useStore.tsx` and same pattern in `authStore.tsx`. These do not block the build.
+- The dev server should be started with `--host 0.0.0.0` for cloud VM access: `npm run dev -- --host 0.0.0.0`.
+- Real Xiaohongshu connection requires a Cookie from a logged-in browser session — paste it in the Account page.
+- Backend sessions and Cookie stored in memory only — restart clears all auth state.
+- The xhs SDK is a non-official reverse-engineered client; signing may break when Xiaohongshu updates their web client.

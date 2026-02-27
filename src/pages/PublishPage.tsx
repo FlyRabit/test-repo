@@ -10,6 +10,7 @@ export default function PublishPage() {
   const { isConnected } = useAuth();
   const [isPublishing, setIsPublishing] = useState(false);
   const [publishError, setPublishError] = useState<string | null>(null);
+  const [publishSuccess, setPublishSuccess] = useState<string | null>(null);
   const publishedArticles = articles.filter((a) => a.status === 'published');
   const draftArticles = articles.filter((a) => a.status === 'draft');
 
@@ -23,7 +24,7 @@ export default function PublishPage() {
     publishArticle(currentArticle.id);
   };
 
-  const handleApiPublish = async () => {
+  const handleXhsPublish = async () => {
     if (!currentArticle || isPublishing) return;
     if (!currentArticle.title.trim()) {
       alert('请先填写笔记标题');
@@ -31,13 +32,32 @@ export default function PublishPage() {
     }
     setIsPublishing(true);
     setPublishError(null);
+    setPublishSuccess(null);
+
     try {
+      let imagePaths: string[] = [];
+
+      if (currentArticle.images.length > 0) {
+        const imageFiles = await Promise.all(
+          currentArticle.images.map(async (img) => {
+            const response = await fetch(img.url);
+            const blob = await response.blob();
+            return new File([blob], `image_${img.id}.jpg`, { type: blob.type || 'image/jpeg' });
+          })
+        );
+        const uploadResult = await api.upload.images(imageFiles);
+        imagePaths = uploadResult.files.map(f => f.path);
+      }
+
       await api.notes.create({
         title: currentArticle.title,
-        content: currentArticle.content,
-        images: currentArticle.images.map(img => img.url),
+        desc: currentArticle.content,
+        image_paths: imagePaths,
+        is_private: false,
       });
+
       publishArticle(currentArticle.id);
+      setPublishSuccess('笔记已成功发布到小红书！');
     } catch (err) {
       setPublishError(err instanceof Error ? err.message : '发布失败，请重试');
     } finally {
@@ -85,32 +105,26 @@ export default function PublishPage() {
                         .sort((a, b) => a.order - b.order)
                         .slice(0, 5)
                         .map((img) => (
-                          <img
-                            key={img.id}
-                            src={img.url}
-                            alt=""
-                            className="w-16 h-20 object-cover rounded-lg border border-red-100"
-                          />
+                          <img key={img.id} src={img.url} alt="" className="w-16 h-20 object-cover rounded-lg border border-red-100" />
                         ))}
+                      {currentArticle.images.length > 5 && (
+                        <div className="w-16 h-20 flex items-center justify-center bg-gray-100 rounded-lg border border-red-100 text-sm text-gray-500">
+                          +{currentArticle.images.length - 5}
+                        </div>
+                      )}
                     </div>
                   )}
 
                   {isConnected && currentArticle.status !== 'published' && (
                     <button
-                      onClick={handleApiPublish}
+                      onClick={handleXhsPublish}
                       disabled={isPublishing}
                       className="w-full py-3 rounded-xl font-medium flex items-center justify-center gap-2 transition-all bg-[#fe2c55] text-white hover:bg-[#e01a45] shadow-md disabled:opacity-70"
                     >
                       {isPublishing ? (
-                        <>
-                          <Loader2 size={20} className="animate-spin" />
-                          发布中...
-                        </>
+                        <><Loader2 size={20} className="animate-spin" /> 发布到小红书中...</>
                       ) : (
-                        <>
-                          <Send size={20} />
-                          发布到小红书
-                        </>
+                        <><Send size={20} /> 发布到小红书</>
                       )}
                     </button>
                   )}
@@ -127,25 +141,24 @@ export default function PublishPage() {
                     }`}
                   >
                     {currentArticle.status === 'published' ? (
-                      <>
-                        <CheckCircle size={20} />
-                        已发布
-                      </>
+                      <><CheckCircle size={20} /> 已发布</>
                     ) : (
-                      <>
-                        <Send size={20} />
-                        {isConnected ? '仅本地发布' : '一键发布'}
-                      </>
+                      <><Send size={20} /> {isConnected ? '仅本地发布' : '一键发布'}</>
                     )}
                   </button>
 
+                  {publishSuccess && (
+                    <div className="bg-green-50 border border-green-200 rounded-xl p-3 text-sm text-green-700 flex items-center gap-2">
+                      <CheckCircle size={16} /> {publishSuccess}
+                    </div>
+                  )}
                   {publishError && (
-                    <p className="text-xs text-red-500 text-center">{publishError}</p>
+                    <p className="text-xs text-red-500 text-center bg-red-50 border border-red-200 rounded-xl p-3">{publishError}</p>
                   )}
 
                   <p className="text-xs text-gray-400 text-center">
                     {isConnected
-                      ? '连接模式：可直接发布到小红书平台'
+                      ? '通过 xhs SDK 直接发布到小红书平台'
                       : '注：此为模拟发布，数据将保存到本地并显示在数据图表中'}
                   </p>
                 </div>

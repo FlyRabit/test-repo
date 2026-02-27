@@ -55,12 +55,12 @@ export default function Layout() {
           >
             {isConnected ? (
               <>
-                {userInfo?.avatar ? (
-                  <img src={userInfo.avatar} alt="" className="w-5 h-5 rounded-full" />
+                {userInfo?.basic_info?.images ? (
+                  <img src={userInfo.basic_info.images} alt="" className="w-5 h-5 rounded-full" />
                 ) : (
                   <CheckCircle size={20} />
                 )}
-                <span className="truncate">{userInfo?.nickname || '已连接'}</span>
+                <span className="truncate">{userInfo?.basic_info?.nickname || '已连接'}</span>
               </>
             ) : (
               <>

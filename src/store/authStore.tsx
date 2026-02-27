@@ -1,9 +1,8 @@
 import { createContext, useContext, useState, useCallback, useEffect } from 'react';
-import { api, setSessionId, clearSessionId, type XhsUserInfo } from '../services/api';
+import { api, type XhsUserInfo } from '../services/api';
 
 interface AuthState {
   isConnected: boolean;
-  isConfigured: boolean;
   isLoading: boolean;
   userInfo: XhsUserInfo | null;
   error: string | null;
@@ -11,7 +10,7 @@ interface AuthState {
 }
 
 interface AuthContextType extends AuthState {
-  login: () => Promise<void>;
+  loginWithCookie: (cookie: string) => Promise<boolean>;
   logout: () => Promise<void>;
   refreshStatus: () => Promise<void>;
 }
@@ -21,7 +20,6 @@ const AuthContext = createContext<AuthContextType | null>(null);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState<AuthState>({
     isConnected: false,
-    isConfigured: false,
     isLoading: true,
     userInfo: null,
     error: null,
@@ -30,32 +28,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const refreshStatus = useCallback(async () => {
     try {
-      const health = await api.health();
+      await api.health();
       const authStatus = await api.auth.getStatus();
-
       setState(prev => ({
         ...prev,
         serverOnline: true,
-        isConfigured: health.configured,
         isConnected: authStatus.authenticated,
-        userInfo: authStatus.userInfo || null,
+        userInfo: authStatus.user_info || null,
         isLoading: false,
         error: null,
       }));
-
-      if (authStatus.expired) {
-        try {
-          await api.auth.refresh();
-          const newStatus = await api.auth.getStatus();
-          setState(prev => ({
-            ...prev,
-            isConnected: newStatus.authenticated,
-            userInfo: newStatus.userInfo || null,
-          }));
-        } catch {
-          setState(prev => ({ ...prev, isConnected: false, userInfo: null }));
-        }
-      }
     } catch {
       setState(prev => ({
         ...prev,
@@ -67,35 +49,43 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const session = params.get('session');
-    if (session) {
-      setSessionId(session);
-      window.history.replaceState({}, '', window.location.pathname);
-    }
     refreshStatus();
   }, [refreshStatus]);
 
-  const login = useCallback(async () => {
+  const loginWithCookie = useCallback(async (cookie: string): Promise<boolean> => {
+    setState(prev => ({ ...prev, error: null, isLoading: true }));
     try {
-      setState(prev => ({ ...prev, error: null }));
-      const { url } = await api.auth.getLoginUrl();
-      window.location.href = url;
+      const result = await api.auth.setCookie(cookie);
+      if (result.success) {
+        const status = await api.auth.getStatus();
+        setState(prev => ({
+          ...prev,
+          isConnected: true,
+          userInfo: status.user_info || null,
+          isLoading: false,
+        }));
+        return true;
+      }
+      setState(prev => ({
+        ...prev,
+        error: result.error || '连接失败',
+        isLoading: false,
+      }));
+      return false;
     } catch (err) {
       setState(prev => ({
         ...prev,
-        error: err instanceof Error ? err.message : '获取登录链接失败',
+        error: err instanceof Error ? err.message : '连接失败',
+        isLoading: false,
       }));
+      return false;
     }
   }, []);
 
   const logout = useCallback(async () => {
     try {
       await api.auth.logout();
-    } catch {
-      // ignore logout errors
-    }
-    clearSessionId();
+    } catch { /* ignore */ }
     setState(prev => ({
       ...prev,
       isConnected: false,
@@ -104,7 +94,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ ...state, login, logout, refreshStatus }}>
+    <AuthContext.Provider value={{ ...state, loginWithCookie, logout, refreshStatus }}>
       {children}
     </AuthContext.Provider>
   );

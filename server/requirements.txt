@@ -1,0 +1,5 @@
+xhs>=0.2.13
+fastapi>=0.110.0
+uvicorn>=0.29.0
+python-multipart>=0.0.9
+playwright>=1.40.0
