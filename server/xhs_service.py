@@ -2,6 +2,11 @@ import os
 import tempfile
 import traceback
 from xhs import XhsClient
+from xhs.help import sign as _xhs_sign
+
+
+def xhs_sign(url, data=None, a1="", **kwargs):
+    return _xhs_sign(url, data, a1=a1)
 
 
 class XhsService:
@@ -25,10 +30,18 @@ class XhsService:
 
     def connect(self, cookie: str) -> dict:
         try:
-            client = XhsClient(cookie=cookie)
-            info = client.get_self_info()
+            client = XhsClient(cookie=cookie, sign=xhs_sign)
             self._client = client
             self._cookie = cookie
+
+            info = None
+            for method_name in ("get_self_info2", "get_self_info"):
+                try:
+                    info = getattr(client, method_name)()
+                    break
+                except Exception as inner_e:
+                    print(f"{method_name} failed: {inner_e}")
+
             self._user_info = info
             return {"success": True, "user_info": info}
         except Exception as e:
