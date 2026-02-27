@@ -1,11 +1,19 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '../store/authStore';
-import { User, LogIn, LogOut, RefreshCw, AlertCircle, CheckCircle, Server, ServerOff, Loader2, Cookie, Copy } from 'lucide-react';
+import { api } from '../services/api';
+import { User, LogIn, LogOut, RefreshCw, AlertCircle, CheckCircle, Server, ServerOff, Loader2, Cookie, Copy, Globe } from 'lucide-react';
 
 export default function AccountPage() {
   const { isConnected, isLoading, userInfo, error, serverOnline, loginWithCookie, logout, refreshStatus } = useAuth();
   const [cookieInput, setCookieInput] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [proxyInput, setProxyInput] = useState('');
+  const [currentProxy, setCurrentProxy] = useState<string | null>(null);
+  const [proxySaving, setProxySaving] = useState(false);
+
+  useEffect(() => {
+    api.health().then(h => setCurrentProxy(h.proxy ?? null)).catch(() => {});
+  }, []);
 
   const handleConnect = async () => {
     if (!cookieInput.trim() || isSubmitting) return;
@@ -54,6 +62,67 @@ export default function AccountPage() {
               <code className="block mt-2 p-2 bg-amber-100 rounded text-xs">npm run dev:server</code>
             </div>
           )}
+        </div>
+      </div>
+
+      {/* 代理设置 */}
+      <div className="bg-white/90 backdrop-blur rounded-2xl shadow-lg border border-red-50 overflow-hidden mb-6">
+        <div className="p-6 border-b border-red-50 bg-gradient-to-r from-red-50 to-pink-50">
+          <h2 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+            <Globe size={20} /> 网络代理
+          </h2>
+        </div>
+        <div className="p-6 space-y-3">
+          {currentProxy ? (
+            <div className="flex items-center justify-between bg-green-50 rounded-xl p-3">
+              <div>
+                <p className="text-sm font-medium text-green-700">当前代理</p>
+                <p className="text-xs text-green-600 font-mono mt-0.5">{currentProxy}</p>
+              </div>
+              <button
+                onClick={async () => {
+                  await fetch('/api/proxy', { method: 'DELETE' });
+                  setCurrentProxy(null);
+                }}
+                className="text-xs text-red-500 hover:text-red-700 px-2 py-1"
+              >
+                移除
+              </button>
+            </div>
+          ) : (
+            <p className="text-sm text-gray-500">未配置代理（当前使用服务器 IP 发布）</p>
+          )}
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={proxyInput}
+              onChange={e => setProxyInput(e.target.value)}
+              placeholder="http://ip:port 或 socks5://ip:port"
+              className="flex-1 px-3 py-2 rounded-lg border border-red-100 focus:border-[#fe2c55] focus:ring-2 focus:ring-red-100 outline-none text-sm font-mono"
+            />
+            <button
+              onClick={async () => {
+                if (!proxyInput.trim() || proxySaving) return;
+                setProxySaving(true);
+                try {
+                  const res = await fetch('/api/proxy', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ proxy: proxyInput.trim() }),
+                  });
+                  const data = await res.json();
+                  setCurrentProxy(data.proxy);
+                  setProxyInput('');
+                } catch { /* ignore */ }
+                setProxySaving(false);
+              }}
+              disabled={!proxyInput.trim() || proxySaving}
+              className="px-4 py-2 bg-[#fe2c55] text-white text-sm rounded-lg hover:bg-[#e01a45] disabled:opacity-50"
+            >
+              {proxySaving ? '保存中...' : '设置'}
+            </button>
+          </div>
+          <p className="text-xs text-gray-400">设置中国代理后，发布笔记将显示为中国 IP。支持 HTTP/HTTPS/SOCKS5 代理。</p>
         </div>
       </div>
 

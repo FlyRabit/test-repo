@@ -14,6 +14,7 @@ class XhsService:
         self._client: XhsClient | None = None
         self._cookie: str = ""
         self._user_info: dict | None = None
+        self._proxy: str = ""
         self._temp_dir = tempfile.mkdtemp(prefix="xhs_uploads_")
 
     @property
@@ -28,9 +29,22 @@ class XhsService:
     def user_info(self) -> dict | None:
         return self._user_info
 
+    def set_proxy(self, proxy: str):
+        self._proxy = proxy.strip()
+        if self._client and self._proxy:
+            proxies = {"http": self._proxy, "https": self._proxy}
+            self._client.session.proxies = proxies
+
+    @property
+    def proxy(self) -> str:
+        return self._proxy
+
     def connect(self, cookie: str) -> dict:
         try:
-            client = XhsClient(cookie=cookie, sign=xhs_sign)
+            proxies = None
+            if self._proxy:
+                proxies = {"http": self._proxy, "https": self._proxy}
+            client = XhsClient(cookie=cookie, sign=xhs_sign, proxies=proxies)
             self._client = client
             self._cookie = cookie
 

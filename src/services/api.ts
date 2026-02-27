@@ -30,7 +30,7 @@ export class ApiError extends Error {
 }
 
 export const api = {
-  health: () => request<{ status: string; connected: boolean; sdk: string; auth_method: string; gemini_configured: boolean }>('/health'),
+  health: () => request<{ status: string; connected: boolean; sdk: string; auth_method: string; gemini_configured: boolean; proxy: string | null }>('/health'),
 
   auth: {
     setCookie: (cookie: string) =>

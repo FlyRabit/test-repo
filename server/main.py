@@ -40,6 +40,9 @@ class SearchInput(BaseModel):
 class CommentInput(BaseModel):
     content: str
 
+class ProxyInput(BaseModel):
+    proxy: str
+
 class AIBeautifyInput(BaseModel):
     content: str
 
@@ -60,7 +63,21 @@ def health():
         "sdk": "ReaJason/xhs 0.2.13",
         "auth_method": "cookie",
         "gemini_configured": gemini_service.is_configured,
+        "proxy": xhs_service.proxy or None,
     }
+
+
+# ---------- Proxy ----------
+
+@app.post("/api/proxy")
+def set_proxy(body: ProxyInput):
+    xhs_service.set_proxy(body.proxy)
+    return {"success": True, "proxy": xhs_service.proxy or None}
+
+@app.delete("/api/proxy")
+def clear_proxy():
+    xhs_service.set_proxy("")
+    return {"success": True}
 
 
 # ---------- Auth ----------
