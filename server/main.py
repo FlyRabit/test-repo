@@ -133,7 +133,16 @@ def get_my_notes(cursor: str = ""):
 @app.get("/api/notes/stats")
 def get_notes_stats():
     try:
-        data = xhs_service.get_notes_statistics()
+        data = xhs_service.get_notes_summary()
+        return {"success": True, "data": data}
+    except Exception as e:
+        traceback.print_exc()
+        raise HTTPException(500, str(e))
+
+@app.get("/api/dashboard")
+def get_dashboard():
+    try:
+        data = xhs_service.get_dashboard_data()
         return {"success": True, "data": data}
     except Exception as e:
         traceback.print_exc()

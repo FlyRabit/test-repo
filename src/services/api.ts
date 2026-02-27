@@ -49,6 +49,9 @@ export const api = {
       request<{ success: boolean; data: XhsUserInfo }>('/user/info'),
   },
 
+  dashboard: () =>
+    request<{ success: boolean; data: DashboardData }>('/dashboard'),
+
   notes: {
     getMine: (cursor = '') =>
       request(`/notes/self?cursor=${cursor}`),
@@ -140,6 +143,29 @@ export interface XhsUserInfo {
 export interface XhsNotesStats {
   note_count?: number;
   [key: string]: unknown;
+}
+
+export interface PeriodStats {
+  views: number;
+  likes: number;
+  comments: number;
+  collects: number;
+  shares: number;
+  fans_growth: number;
+  avg_view_time: number;
+  home_views: number;
+  summary: string;
+  view_trend: number[];
+  like_trend: number[];
+  comment_trend: number[];
+  fans_trend: number[];
+}
+
+export interface DashboardData {
+  user: XhsUserInfo | null;
+  seven_days: PeriodStats;
+  thirty_days: PeriodStats;
+  notes: Record<string, unknown>;
 }
 
 export interface AIResult {

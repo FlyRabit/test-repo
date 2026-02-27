@@ -89,9 +89,62 @@ class XhsService:
         client = self._require_client()
         return client.get_note_by_id(note_id)
 
-    def get_notes_statistics(self) -> dict:
+    def get_notes_summary(self) -> dict:
         client = self._require_client()
         return client.get_notes_summary()
+
+    def get_notes_statistics(self, page: int = 1, page_size: int = 48, time: int = 30) -> dict:
+        client = self._require_client()
+        return client.get_notes_statistics(page=page, page_size=page_size, time=time, is_recent=False)
+
+    def get_dashboard_data(self) -> dict:
+        client = self._require_client()
+        summary = client.get_notes_summary()
+        seven = summary.get("seven", {})
+        thirty = summary.get("thirty", {})
+
+        notes_data = {}
+        try:
+            notes_data = client.get_notes_statistics(page=1, page_size=48, time=365, is_recent=False)
+        except Exception:
+            pass
+
+        user_info = self._user_info or {}
+
+        return {
+            "user": user_info,
+            "seven_days": {
+                "views": seven.get("view_count", 0),
+                "likes": seven.get("like_count", 0),
+                "comments": seven.get("comment_count", 0),
+                "collects": seven.get("collect_count", 0),
+                "shares": seven.get("share_count", 0),
+                "fans_growth": seven.get("rise_fans_count", 0),
+                "avg_view_time": seven.get("view_time_avg", 0),
+                "home_views": seven.get("home_view_count", 0),
+                "summary": seven.get("summary", ""),
+                "view_trend": seven.get("view_list", []),
+                "like_trend": seven.get("like_list", []),
+                "comment_trend": seven.get("comment_list", []),
+                "fans_trend": seven.get("rise_fans_list", []),
+            },
+            "thirty_days": {
+                "views": thirty.get("view_count", 0),
+                "likes": thirty.get("like_count", 0),
+                "comments": thirty.get("comment_count", 0),
+                "collects": thirty.get("collect_count", 0),
+                "shares": thirty.get("share_count", 0),
+                "fans_growth": thirty.get("rise_fans_count", 0),
+                "avg_view_time": thirty.get("view_time_avg", 0),
+                "home_views": thirty.get("home_view_count", 0),
+                "summary": thirty.get("summary", ""),
+                "view_trend": thirty.get("view_list", []),
+                "like_trend": thirty.get("like_list", []),
+                "comment_trend": thirty.get("comment_list", []),
+                "fans_trend": thirty.get("rise_fans_list", []),
+            },
+            "notes": notes_data.get("data", {}),
+        }
 
     def get_note_comments(self, note_id: str, cursor: str = "") -> dict:
         client = self._require_client()
