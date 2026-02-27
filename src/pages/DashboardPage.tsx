@@ -14,10 +14,12 @@ import {
   Cell,
 } from 'recharts';
 import { useStore } from '../store/useStore';
-import { Eye, Heart, MessageCircle, Bookmark, Share2 } from 'lucide-react';
+import { useAuth } from '../store/authStore';
+import { Eye, Heart, MessageCircle, Bookmark, Share2, Wifi, WifiOff } from 'lucide-react';
 
 export default function DashboardPage() {
   const { articles } = useStore();
+  const { isConnected } = useAuth();
   const published = articles.filter((a) => a.status === 'published');
 
   const totalStats = published.reduce(
@@ -54,7 +56,13 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-8">
-        <h1 className="text-2xl font-bold text-gray-800">数据图表</h1>
+        <div className="flex items-center justify-between">
+          <h1 className="text-2xl font-bold text-gray-800">数据图表</h1>
+          <span className={`flex items-center gap-1 text-xs px-3 py-1.5 rounded-full ${isConnected ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
+            {isConnected ? <Wifi size={12} /> : <WifiOff size={12} />}
+            {isConnected ? '实时数据' : '本地模拟数据'}
+          </span>
+        </div>
 
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
           <StatCard

@@ -1,5 +1,6 @@
 import { NavLink, Outlet } from 'react-router-dom';
-import { FileEdit, Image, Send, BarChart3 } from 'lucide-react';
+import { FileEdit, Image, Send, BarChart3, User, CheckCircle } from 'lucide-react';
+import { useAuth } from '../store/authStore';
 import type { NavItem } from '../types';
 
 const navItems: { key: NavItem; label: string; icon: React.ReactNode; path: string }[] = [
@@ -10,6 +11,8 @@ const navItems: { key: NavItem; label: string; icon: React.ReactNode; path: stri
 ];
 
 export default function Layout() {
+  const { isConnected, userInfo } = useAuth();
+
   return (
     <div className="min-h-screen flex">
       <aside className="w-56 bg-white/90 backdrop-blur shadow-lg border-r border-red-100 flex flex-col">
@@ -39,6 +42,34 @@ export default function Layout() {
             </NavLink>
           ))}
         </nav>
+        <div className="p-3 border-t border-red-50">
+          <NavLink
+            to="/account"
+            className={({ isActive }) =>
+              `flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
+                isActive
+                  ? 'bg-[#fe2c55] text-white shadow-md shadow-red-200'
+                  : 'text-gray-600 hover:bg-red-50 hover:text-[#fe2c55]'
+              }`
+            }
+          >
+            {isConnected ? (
+              <>
+                {userInfo?.avatar ? (
+                  <img src={userInfo.avatar} alt="" className="w-5 h-5 rounded-full" />
+                ) : (
+                  <CheckCircle size={20} />
+                )}
+                <span className="truncate">{userInfo?.nickname || '已连接'}</span>
+              </>
+            ) : (
+              <>
+                <User size={20} />
+                <span>账号管理</span>
+              </>
+            )}
+          </NavLink>
+        </div>
       </aside>
       <main className="flex-1 overflow-auto p-8">
         <Outlet />
