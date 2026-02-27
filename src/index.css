@@ -1,0 +1,18 @@
+@import "tailwindcss";
+
+:root {
+  --xhs-red: #fe2c55;
+  --xhs-red-dark: #e01a45;
+  --xhs-pink: #ff6b9d;
+  --xhs-bg: #fff5f7;
+  --xhs-card: #ffffff;
+  --xhs-text: #333333;
+  --xhs-text-muted: #8e8e93;
+}
+
+body {
+  margin: 0;
+  font-family: "PingFang SC", "Microsoft YaHei", -apple-system, BlinkMacSystemFont, sans-serif;
+  background: linear-gradient(135deg, #fff8f9 0%, #fef5f7 50%, #fff0f3 100%);
+  min-height: 100vh;
+}
