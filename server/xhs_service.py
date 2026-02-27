@@ -1,12 +1,32 @@
 import os
+import json
 import tempfile
 import traceback
+from datetime import datetime
 from xhs import XhsClient
 from xhs.help import sign as _xhs_sign
 
 
 def xhs_sign(url, data=None, a1="", **kwargs):
     return _xhs_sign(url, data, a1=a1)
+
+
+PUBLISHED_NOTES_FILE = os.path.join(os.path.dirname(__file__), ".published_notes.json")
+
+
+def _load_published_notes() -> list[dict]:
+    try:
+        if os.path.exists(PUBLISHED_NOTES_FILE):
+            with open(PUBLISHED_NOTES_FILE, "r") as f:
+                return json.loads(f.read())
+    except Exception:
+        pass
+    return []
+
+
+def _save_published_notes(notes: list[dict]):
+    with open(PUBLISHED_NOTES_FILE, "w") as f:
+        f.write(json.dumps(notes, ensure_ascii=False, indent=2))
 
 
 class XhsService:
@@ -16,6 +36,7 @@ class XhsService:
         self._user_info: dict | None = None
         self._proxy: str = ""
         self._temp_dir = tempfile.mkdtemp(prefix="xhs_uploads_")
+        self._published_notes: list[dict] = _load_published_notes()
 
     @property
     def is_connected(self) -> bool:
@@ -167,13 +188,31 @@ class XhsService:
         is_private: bool = False,
     ) -> dict:
         client = self._require_client()
-        return client.create_image_note(
+        result = client.create_image_note(
             title=title,
             desc=desc,
             files=image_paths,
             topics=topics or [],
             is_private=is_private,
         )
+        note_id = result.get("id", "")
+        if note_id:
+            self._published_notes.append({
+                "note_id": note_id,
+                "title": title,
+                "desc": desc[:200],
+                "image_count": len(image_paths),
+                "cover": image_paths[0] if image_paths else "",
+                "is_private": is_private,
+                "score": result.get("score", 0),
+                "published_at": datetime.now().isoformat(),
+                "topics": [t.get("name", "") for t in (topics or [])],
+            })
+            _save_published_notes(self._published_notes)
+        return result
+
+    def get_published_notes(self) -> list[dict]:
+        return list(reversed(self._published_notes))
 
     def like_note(self, note_id: str) -> dict:
         client = self._require_client()

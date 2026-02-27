@@ -130,6 +130,10 @@ def get_my_notes(cursor: str = ""):
         traceback.print_exc()
         raise HTTPException(500, str(e))
 
+@app.get("/api/notes/published")
+def get_published_notes():
+    return {"success": True, "data": xhs_service.get_published_notes()}
+
 @app.get("/api/notes/stats")
 def get_notes_stats():
     try:

@@ -53,6 +53,8 @@ export const api = {
     request<{ success: boolean; data: DashboardData }>('/dashboard'),
 
   notes: {
+    getPublished: () =>
+      request<{ success: boolean; data: PublishedNote[] }>('/notes/published'),
     getMine: (cursor = '') =>
       request(`/notes/self?cursor=${cursor}`),
     getStats: () =>
@@ -166,6 +168,18 @@ export interface DashboardData {
   seven_days: PeriodStats;
   thirty_days: PeriodStats;
   notes: Record<string, unknown>;
+}
+
+export interface PublishedNote {
+  note_id: string;
+  title: string;
+  desc: string;
+  image_count: number;
+  cover: string;
+  is_private: boolean;
+  score: number;
+  published_at: string;
+  topics: string[];
 }
 
 export interface AIResult {
