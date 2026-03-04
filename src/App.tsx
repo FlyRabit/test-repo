@@ -6,6 +6,7 @@ import EditorPage from './pages/EditorPage';
 import ImageLayoutPage from './pages/ImageLayoutPage';
 import PublishPage from './pages/PublishPage';
 import VideoPublishPage from './pages/VideoPublishPage';
+import AIVideoPage from './pages/AIVideoPage';
 import DashboardPage from './pages/DashboardPage';
 import AIGeneratorPage from './pages/AIGeneratorPage';
 import AccountPage from './pages/AccountPage';
@@ -22,6 +23,7 @@ export default function App() {
               <Route path="publish" element={<PublishPage />} />
               <Route path="video" element={<VideoPublishPage />} />
               <Route path="ai" element={<AIGeneratorPage />} />
+              <Route path="ai-video" element={<AIVideoPage />} />
               <Route path="dashboard" element={<DashboardPage />} />
               <Route path="account" element={<AccountPage />} />
             </Route>

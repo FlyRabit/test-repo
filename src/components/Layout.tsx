@@ -9,6 +9,7 @@ const navItems: { key: NavItem; label: string; icon: React.ReactNode; path: stri
   { key: 'publish', label: '一键发布', icon: <Send size={20} />, path: '/publish' },
   { key: 'video', label: '视频发布', icon: <Video size={20} />, path: '/video' },
   { key: 'ai', label: 'AI 创作', icon: <Sparkles size={20} />, path: '/ai' },
+  { key: 'ai-video', label: 'AI 视频', icon: <Video size={20} />, path: '/ai-video' },
   { key: 'dashboard', label: '数据图表', icon: <BarChart3 size={20} />, path: '/dashboard' },
 ];
 

@@ -99,6 +99,19 @@ export const api = {
       request(`/topics/suggest?keyword=${encodeURIComponent(keyword)}`),
   },
 
+  aiVideo: {
+    generate: (prompt: string, aspect_ratio = '16:9') =>
+      request<{ success: boolean; task_id: string }>('/ai/video/generate', {
+        method: 'POST',
+        body: JSON.stringify({ prompt, aspect_ratio }),
+      }),
+    status: (taskId: string) =>
+      request<{ success: boolean; data: { status: string; progress: string | null; path: string | null; error: string | null } }>(`/ai/video/status/${taskId}`),
+    downloadUrl: (taskId: string) => `${API_BASE}/ai/video/download/${taskId}`,
+    publish: (data: { title: string; desc: string; video_path: string; cover_path?: string; is_private?: boolean }) =>
+      request('/ai/video/publish', { method: 'POST', body: JSON.stringify(data) }),
+  },
+
   ai: {
     beautify: (content: string) =>
       request<{ success: boolean; data: AIResult }>('/ai/beautify', {

@@ -60,6 +60,10 @@ class AIGenerateInput(BaseModel):
 class AINewsInput(BaseModel):
     news: str
 
+class AIVideoInput(BaseModel):
+    prompt: str
+    aspect_ratio: str = "16:9"
+
 
 # ---------- Health ----------
 
@@ -332,6 +336,52 @@ def ai_news_to_note(body: AINewsInput):
     try:
         result = gemini_service.news_to_note(body.news)
         return {"success": True, "data": result}
+    except Exception as e:
+        traceback.print_exc()
+        raise HTTPException(500, str(e))
+
+
+# ---------- AI Video Generation ----------
+
+@app.post("/api/ai/video/generate")
+def ai_video_generate(body: AIVideoInput):
+    if not body.prompt.strip():
+        raise HTTPException(400, "提示词不能为空")
+    task_id = uuid.uuid4().hex
+    gemini_service.generate_video_async(task_id, body.prompt, body.aspect_ratio)
+    return {"success": True, "task_id": task_id}
+
+@app.get("/api/ai/video/status/{task_id}")
+def ai_video_status(task_id: str):
+    task = gemini_service.get_video_task(task_id)
+    if not task:
+        raise HTTPException(404, "任务不存在")
+    return {"success": True, "data": task}
+
+@app.get("/api/ai/video/download/{task_id}")
+def ai_video_download(task_id: str):
+    from fastapi.responses import FileResponse
+    task = gemini_service.get_video_task(task_id)
+    if not task or task["status"] != "done" or not task["path"]:
+        raise HTTPException(404, "视频未就绪")
+    return FileResponse(task["path"], media_type="video/mp4", filename="generated.mp4")
+
+@app.post("/api/ai/video/publish")
+def ai_video_publish(body: CreateVideoNoteInput):
+    if not body.title.strip():
+        raise HTTPException(400, "标题不能为空")
+    if not body.video_path:
+        raise HTTPException(400, "视频路径不能为空")
+    try:
+        data = xhs_service.create_video_note(
+            title=body.title,
+            video_path=body.video_path,
+            desc=body.desc,
+            cover_path=body.cover_path,
+            topics=body.topics,
+            is_private=body.is_private,
+        )
+        return {"success": True, "data": data}
     except Exception as e:
         traceback.print_exc()
         raise HTTPException(500, str(e))

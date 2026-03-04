@@ -1,8 +1,12 @@
 import os
 import json
+import time
+import uuid
 import traceback
+import threading
 
 import google.generativeai as genai
+from google import genai as genai_new
 
 PROMPTS = {
     "beautify": """你是一位资深小红书博主，擅长将普通文案改写成小红书爆款风格。
@@ -61,6 +65,7 @@ class GeminiService:
     def __init__(self):
         self._model = None
         self._api_key = ""
+        self._video_tasks: dict[str, dict] = {}
 
     def _get_model(self):
         api_key = os.getenv("GEMINI_API_KEY", "")
@@ -103,6 +108,49 @@ class GeminiService:
     def fetch_news(self, topic: str) -> dict:
         prompt = PROMPTS["fetch_news"].format(topic=topic)
         return self._call(prompt)
+
+
+    def generate_video(self, prompt: str, aspect_ratio: str = "16:9") -> str:
+        api_key = os.getenv("GEMINI_API_KEY", "")
+        if not api_key:
+            raise RuntimeError("未配置 GEMINI_API_KEY")
+
+        client = genai_new.Client(api_key=api_key)
+        operation = client.models.generate_videos(
+            model="veo-2.0-generate-001",
+            prompt=prompt,
+            config=genai_new.types.GenerateVideosConfig(
+                aspect_ratio=aspect_ratio,
+                number_of_videos=1,
+            ),
+        )
+
+        while not operation.done:
+            time.sleep(5)
+            operation = client.operations.get(operation)
+
+        video = operation.response.generated_videos[0]
+        client.files.download(file=video.video)
+
+        out_dir = os.path.join(os.path.dirname(__file__), ".generated_videos")
+        os.makedirs(out_dir, exist_ok=True)
+        out_path = os.path.join(out_dir, f"{uuid.uuid4().hex}.mp4")
+        video.video.save(out_path)
+        return out_path
+
+    def generate_video_async(self, task_id: str, prompt: str, aspect_ratio: str = "16:9"):
+        self._video_tasks[task_id] = {"status": "generating", "progress": "AI 正在生成视频...", "path": None, "error": None}
+        def _run():
+            try:
+                path = self.generate_video(prompt, aspect_ratio)
+                self._video_tasks[task_id] = {"status": "done", "progress": "完成", "path": path, "error": None}
+            except Exception as e:
+                traceback.print_exc()
+                self._video_tasks[task_id] = {"status": "error", "progress": None, "path": None, "error": str(e)}
+        threading.Thread(target=_run, daemon=True).start()
+
+    def get_video_task(self, task_id: str) -> dict | None:
+        return self._video_tasks.get(task_id)
 
 
 gemini_service = GeminiService()
