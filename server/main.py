@@ -37,6 +37,14 @@ class SearchInput(BaseModel):
     page: int = 1
     sort: str = "general"
 
+class CreateVideoNoteInput(BaseModel):
+    title: str
+    desc: str = ""
+    video_path: str
+    cover_path: str | None = None
+    topics: list[dict] = []
+    is_private: bool = False
+
 class CommentInput(BaseModel):
     content: str
 
@@ -197,17 +205,44 @@ def create_note(body: CreateNoteInput):
         raise HTTPException(500, str(e))
 
 
+@app.post("/api/notes/video")
+def create_video_note(body: CreateVideoNoteInput):
+    if not body.title.strip():
+        raise HTTPException(400, "标题不能为空")
+    if not body.video_path:
+        raise HTTPException(400, "视频文件路径不能为空")
+    try:
+        data = xhs_service.create_video_note(
+            title=body.title,
+            video_path=body.video_path,
+            desc=body.desc,
+            cover_path=body.cover_path,
+            topics=body.topics,
+            is_private=body.is_private,
+        )
+        return {"success": True, "data": data}
+    except Exception as e:
+        traceback.print_exc()
+        raise HTTPException(500, str(e))
+
+
 # ---------- Upload ----------
 
 @app.post("/api/upload")
-async def upload_images(files: list[UploadFile] = File(...)):
+async def upload_files(files: list[UploadFile] = File(...)):
     saved = []
     for f in files:
         content = await f.read()
-        ext = os.path.splitext(f.filename or "img.jpg")[1] or ".jpg"
+        ext = os.path.splitext(f.filename or "file")[1] or ".bin"
         filename = f"{uuid.uuid4().hex}{ext}"
         path = xhs_service.save_upload_file(filename, content)
-        saved.append({"filename": filename, "path": path, "size": len(content)})
+        is_video = ext.lower() in ('.mp4', '.mov', '.avi', '.mkv', '.webm')
+        saved.append({
+            "filename": filename,
+            "path": path,
+            "size": len(content),
+            "type": "video" if is_video else "image",
+        })
     return {"success": True, "files": saved}
 
 

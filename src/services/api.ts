@@ -70,6 +70,8 @@ export const api = {
       }),
     create: (data: { title: string; desc: string; image_paths: string[]; topics?: unknown[]; is_private?: boolean }) =>
       request('/notes', { method: 'POST', body: JSON.stringify(data) }),
+    createVideo: (data: { title: string; desc: string; video_path: string; cover_path?: string; topics?: unknown[]; is_private?: boolean }) =>
+      request('/notes/video', { method: 'POST', body: JSON.stringify(data) }),
     like: (noteId: string) =>
       request(`/notes/${noteId}/like`, { method: 'POST' }),
     collect: (noteId: string) =>
@@ -197,4 +199,5 @@ export interface UploadedFile {
   filename: string;
   path: string;
   size: number;
+  type: 'image' | 'video';
 }

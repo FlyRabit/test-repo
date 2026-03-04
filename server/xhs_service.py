@@ -214,6 +214,41 @@ class XhsService:
     def get_published_notes(self) -> list[dict]:
         return list(reversed(self._published_notes))
 
+    def create_video_note(
+        self,
+        title: str,
+        video_path: str,
+        desc: str,
+        cover_path: str | None = None,
+        topics: list[dict] | None = None,
+        is_private: bool = False,
+    ) -> dict:
+        client = self._require_client()
+        result = client.create_video_note(
+            title=title,
+            video_path=video_path,
+            desc=desc,
+            cover_path=cover_path,
+            topics=topics or [],
+            is_private=is_private,
+        )
+        note_id = result.get("id", "")
+        if note_id:
+            self._published_notes.append({
+                "note_id": note_id,
+                "title": title,
+                "desc": desc[:200],
+                "image_count": 0,
+                "cover": cover_path or "",
+                "is_private": is_private,
+                "score": result.get("score", 0),
+                "published_at": datetime.now().isoformat(),
+                "topics": [t.get("name", "") for t in (topics or [])],
+                "type": "video",
+            })
+            _save_published_notes(self._published_notes)
+        return result
+
     def like_note(self, note_id: str) -> dict:
         client = self._require_client()
         return client.like_note(note_id)
