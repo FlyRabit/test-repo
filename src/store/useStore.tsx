@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import { v4 as uuidv4 } from 'uuid';
-import type { Article, ArticleImage, ArticleStats } from '../types';
+import type { Article, ArticleImage } from '../types';
 
 interface StoreContextType {
   articles: Article[];
@@ -18,14 +18,7 @@ interface StoreContextType {
 
 const STORAGE_KEY = 'xiaohongshu-ops-data';
 
-const generateMockStats = (): ArticleStats => ({
-  views: Math.floor(Math.random() * 5000) + 500,
-  likes: Math.floor(Math.random() * 500) + 50,
-  comments: Math.floor(Math.random() * 100) + 10,
-  collects: Math.floor(Math.random() * 200) + 20,
-  shares: Math.floor(Math.random() * 50) + 5,
-  date: new Date().toISOString().split('T')[0],
-});
+// No more mock stats - dashboard uses real API data
 
 const loadFromStorage = (): Article[] => {
   try {
@@ -147,7 +140,6 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           ...a,
           status: 'published' as const,
           publishedAt: new Date().toISOString(),
-          stats: generateMockStats(),
         };
       })
     );

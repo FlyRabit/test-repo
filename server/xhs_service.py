@@ -1,0 +1,277 @@
+import os
+import json
+import tempfile
+import traceback
+from datetime import datetime
+from xhs import XhsClient
+from xhs.help import sign as _xhs_sign
+
+
+def xhs_sign(url, data=None, a1="", **kwargs):
+    return _xhs_sign(url, data, a1=a1)
+
+
+PUBLISHED_NOTES_FILE = os.path.join(os.path.dirname(__file__), ".published_notes.json")
+
+
+def _load_published_notes() -> list[dict]:
+    try:
+        if os.path.exists(PUBLISHED_NOTES_FILE):
+            with open(PUBLISHED_NOTES_FILE, "r") as f:
+                return json.loads(f.read())
+    except Exception:
+        pass
+    return []
+
+
+def _save_published_notes(notes: list[dict]):
+    with open(PUBLISHED_NOTES_FILE, "w") as f:
+        f.write(json.dumps(notes, ensure_ascii=False, indent=2))
+
+
+class XhsService:
+    def __init__(self):
+        self._client: XhsClient | None = None
+        self._cookie: str = ""
+        self._user_info: dict | None = None
+        self._proxy: str = ""
+        self._temp_dir = tempfile.mkdtemp(prefix="xhs_uploads_")
+        self._published_notes: list[dict] = _load_published_notes()
+
+    @property
+    def is_connected(self) -> bool:
+        return self._client is not None
+
+    @property
+    def cookie(self) -> str:
+        return self._cookie
+
+    @property
+    def user_info(self) -> dict | None:
+        return self._user_info
+
+    def set_proxy(self, proxy: str):
+        self._proxy = proxy.strip()
+        if self._client and self._proxy:
+            proxies = {"http": self._proxy, "https": self._proxy}
+            self._client.session.proxies = proxies
+
+    @property
+    def proxy(self) -> str:
+        return self._proxy
+
+    def connect(self, cookie: str) -> dict:
+        try:
+            proxies = None
+            if self._proxy:
+                proxies = {"http": self._proxy, "https": self._proxy}
+            client = XhsClient(cookie=cookie, sign=xhs_sign, proxies=proxies)
+            self._client = client
+            self._cookie = cookie
+
+            info = None
+            for method_name in ("get_self_info2", "get_self_info"):
+                try:
+                    info = getattr(client, method_name)()
+                    break
+                except Exception as inner_e:
+                    print(f"{method_name} failed: {inner_e}")
+
+            self._user_info = info
+            return {"success": True, "user_info": info}
+        except Exception as e:
+            traceback.print_exc()
+            return {"success": False, "error": f"连接失败: {str(e)}"}
+
+    def disconnect(self):
+        self._client = None
+        self._cookie = ""
+        self._user_info = None
+
+    def _require_client(self) -> XhsClient:
+        if not self._client:
+            raise RuntimeError("未连接小红书账号，请先设置 Cookie")
+        return self._client
+
+    def get_self_info(self) -> dict:
+        client = self._require_client()
+        info = client.get_self_info()
+        self._user_info = info
+        return info
+
+    def get_user_notes(self, user_id: str = "", cursor: str = "") -> dict:
+        client = self._require_client()
+        if not user_id and self._user_info:
+            basic_info = self._user_info.get("basic_info", {})
+            user_id = basic_info.get("red_id", "") or self._user_info.get("user_id", "")
+        return client.get_user_notes(user_id, cursor=cursor)
+
+    def get_note_by_id(self, note_id: str) -> dict:
+        client = self._require_client()
+        return client.get_note_by_id(note_id)
+
+    def get_notes_summary(self) -> dict:
+        client = self._require_client()
+        return client.get_notes_summary()
+
+    def get_notes_statistics(self, page: int = 1, page_size: int = 48, time: int = 30) -> dict:
+        client = self._require_client()
+        return client.get_notes_statistics(page=page, page_size=page_size, time=time, is_recent=False)
+
+    def get_dashboard_data(self) -> dict:
+        client = self._require_client()
+        summary = client.get_notes_summary()
+        seven = summary.get("seven", {})
+        thirty = summary.get("thirty", {})
+
+        notes_data = {}
+        try:
+            notes_data = client.get_notes_statistics(page=1, page_size=48, time=365, is_recent=False)
+        except Exception:
+            pass
+
+        user_info = self._user_info or {}
+
+        return {
+            "user": user_info,
+            "seven_days": {
+                "views": seven.get("view_count", 0),
+                "likes": seven.get("like_count", 0),
+                "comments": seven.get("comment_count", 0),
+                "collects": seven.get("collect_count", 0),
+                "shares": seven.get("share_count", 0),
+                "fans_growth": seven.get("rise_fans_count", 0),
+                "avg_view_time": seven.get("view_time_avg", 0),
+                "home_views": seven.get("home_view_count", 0),
+                "summary": seven.get("summary", ""),
+                "view_trend": seven.get("view_list", []),
+                "like_trend": seven.get("like_list", []),
+                "comment_trend": seven.get("comment_list", []),
+                "fans_trend": seven.get("rise_fans_list", []),
+            },
+            "thirty_days": {
+                "views": thirty.get("view_count", 0),
+                "likes": thirty.get("like_count", 0),
+                "comments": thirty.get("comment_count", 0),
+                "collects": thirty.get("collect_count", 0),
+                "shares": thirty.get("share_count", 0),
+                "fans_growth": thirty.get("rise_fans_count", 0),
+                "avg_view_time": thirty.get("view_time_avg", 0),
+                "home_views": thirty.get("home_view_count", 0),
+                "summary": thirty.get("summary", ""),
+                "view_trend": thirty.get("view_list", []),
+                "like_trend": thirty.get("like_list", []),
+                "comment_trend": thirty.get("comment_list", []),
+                "fans_trend": thirty.get("rise_fans_list", []),
+            },
+            "notes": notes_data.get("data", {}),
+        }
+
+    def get_note_comments(self, note_id: str, cursor: str = "") -> dict:
+        client = self._require_client()
+        return client.get_note_comments(note_id, cursor=cursor)
+
+    def search_notes(self, keyword: str, page: int = 1, sort: str = "general") -> dict:
+        client = self._require_client()
+        return client.get_note_by_keyword(keyword, page=page, sort=sort)
+
+    def get_suggest_topics(self, keyword: str) -> dict:
+        client = self._require_client()
+        return client.get_suggest_topic(keyword)
+
+    def create_image_note(
+        self,
+        title: str,
+        desc: str,
+        image_paths: list[str],
+        topics: list[dict] | None = None,
+        is_private: bool = False,
+    ) -> dict:
+        client = self._require_client()
+        result = client.create_image_note(
+            title=title,
+            desc=desc,
+            files=image_paths,
+            topics=topics or [],
+            is_private=is_private,
+        )
+        note_id = result.get("id", "")
+        if note_id:
+            self._published_notes.append({
+                "note_id": note_id,
+                "title": title,
+                "desc": desc[:200],
+                "image_count": len(image_paths),
+                "cover": image_paths[0] if image_paths else "",
+                "is_private": is_private,
+                "score": result.get("score", 0),
+                "published_at": datetime.now().isoformat(),
+                "topics": [t.get("name", "") for t in (topics or [])],
+            })
+            _save_published_notes(self._published_notes)
+        return result
+
+    def get_published_notes(self) -> list[dict]:
+        return list(reversed(self._published_notes))
+
+    def create_video_note(
+        self,
+        title: str,
+        video_path: str,
+        desc: str,
+        cover_path: str | None = None,
+        topics: list[dict] | None = None,
+        is_private: bool = False,
+    ) -> dict:
+        client = self._require_client()
+        result = client.create_video_note(
+            title=title,
+            video_path=video_path,
+            desc=desc,
+            cover_path=cover_path,
+            topics=topics or [],
+            is_private=is_private,
+        )
+        note_id = result.get("id", "")
+        if note_id:
+            self._published_notes.append({
+                "note_id": note_id,
+                "title": title,
+                "desc": desc[:200],
+                "image_count": 0,
+                "cover": cover_path or "",
+                "is_private": is_private,
+                "score": result.get("score", 0),
+                "published_at": datetime.now().isoformat(),
+                "topics": [t.get("name", "") for t in (topics or [])],
+                "type": "video",
+            })
+            _save_published_notes(self._published_notes)
+        return result
+
+    def like_note(self, note_id: str) -> dict:
+        client = self._require_client()
+        return client.like_note(note_id)
+
+    def collect_note(self, note_id: str) -> dict:
+        client = self._require_client()
+        return client.collect_note(note_id)
+
+    def comment_note(self, note_id: str, content: str) -> dict:
+        client = self._require_client()
+        return client.comment_note(note_id, content)
+
+    def save_upload_file(self, filename: str, content: bytes) -> str:
+        filepath = os.path.join(self._temp_dir, filename)
+        with open(filepath, "wb") as f:
+            f.write(content)
+        return filepath
+
+    def cleanup_temp_files(self):
+        import shutil
+        if os.path.exists(self._temp_dir):
+            shutil.rmtree(self._temp_dir, ignore_errors=True)
+        self._temp_dir = tempfile.mkdtemp(prefix="xhs_uploads_")
+
+
+xhs_service = XhsService()

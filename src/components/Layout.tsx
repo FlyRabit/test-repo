@@ -1,15 +1,21 @@
 import { NavLink, Outlet } from 'react-router-dom';
-import { FileEdit, Image, Send, BarChart3 } from 'lucide-react';
+import { FileEdit, Image, Send, BarChart3, User, CheckCircle, Sparkles, Video } from 'lucide-react';
+import { useAuth } from '../store/authStore';
 import type { NavItem } from '../types';
 
 const navItems: { key: NavItem; label: string; icon: React.ReactNode; path: string }[] = [
   { key: 'editor', label: '文案编辑', icon: <FileEdit size={20} />, path: '/' },
   { key: 'images', label: '图片排版', icon: <Image size={20} />, path: '/images' },
   { key: 'publish', label: '一键发布', icon: <Send size={20} />, path: '/publish' },
+  { key: 'video', label: '视频发布', icon: <Video size={20} />, path: '/video' },
+  { key: 'ai', label: 'AI 创作', icon: <Sparkles size={20} />, path: '/ai' },
+  { key: 'ai-video', label: 'AI 视频', icon: <Video size={20} />, path: '/ai-video' },
   { key: 'dashboard', label: '数据图表', icon: <BarChart3 size={20} />, path: '/dashboard' },
 ];
 
 export default function Layout() {
+  const { isConnected, userInfo } = useAuth();
+
   return (
     <div className="min-h-screen flex">
       <aside className="w-56 bg-white/90 backdrop-blur shadow-lg border-r border-red-100 flex flex-col">
@@ -39,6 +45,34 @@ export default function Layout() {
             </NavLink>
           ))}
         </nav>
+        <div className="p-3 border-t border-red-50">
+          <NavLink
+            to="/account"
+            className={({ isActive }) =>
+              `flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
+                isActive
+                  ? 'bg-[#fe2c55] text-white shadow-md shadow-red-200'
+                  : 'text-gray-600 hover:bg-red-50 hover:text-[#fe2c55]'
+              }`
+            }
+          >
+            {isConnected ? (
+              <>
+                {userInfo?.basic_info?.images ? (
+                  <img src={userInfo.basic_info.images} alt="" className="w-5 h-5 rounded-full" />
+                ) : (
+                  <CheckCircle size={20} />
+                )}
+                <span className="truncate">{userInfo?.basic_info?.nickname || '已连接'}</span>
+              </>
+            ) : (
+              <>
+                <User size={20} />
+                <span>账号管理</span>
+              </>
+            )}
+          </NavLink>
+        </div>
       </aside>
       <main className="flex-1 overflow-auto p-8">
         <Outlet />

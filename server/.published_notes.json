@@ -1,0 +1,41 @@
+[
+  {
+    "note_id": "69a156bc000000002801fe81",
+    "title": "你好",
+    "desc": "你好，这是通过代码自动发布的第一条笔记",
+    "image_count": 1,
+    "cover": "",
+    "is_private": false,
+    "score": 10,
+    "published_at": "2026-02-27T03:48:00",
+    "topics": []
+  },
+  {
+    "note_id": "69a15ed30000000028023697",
+    "title": "2028年AI危机？35岁老码农慌了！",
+    "desc": "兄弟们，晚上好！刚加完班，地铁上刷到一篇2028年AI危机的文章，直接给我整emo了。说实话，最近焦虑到爆炸。想想Cursor和Copilot，现在写代码效率是高了，但感觉自己好像成了AI的代码搬运工。",
+    "image_count": 1,
+    "cover": "",
+    "is_private": false,
+    "score": 10,
+    "published_at": "2026-02-27T08:10:00",
+    "topics": [
+      "AI",
+      "程序员",
+      "中年危机",
+      "副业",
+      "独立开发者"
+    ]
+  },
+  {
+    "note_id": "69a79856000000001a02b656",
+    "title": "AI圈炸裂！OpenAI 1100亿融资+五角大楼签约",
+    "desc": "兄弟们，今天AI圈的大瓜，错过绝对亏一个亿！🔥 赶紧上车，一分钟吃透！\n\n1. OpenAI融资1100亿美金，估值7300亿！💰\n亚马逊直接梭哈500亿，英伟达、软银各300亿！还和亚马逊搞了个AI Agent平台。感觉OpenAI要垄断地球了，以后打工人都要给AI打工了…😱\n\n2. 特朗普政府封杀Anthropic！🚫\n理由是Anthropic不给军方随便用AI技术。硬气！为良心点赞👍 不过这",
+    "image_count": 1,
+    "cover": "/tmp/xhs_uploads_6jkqfjkb/65b3e7f8a9104c99877bd91a846f5385.jpg",
+    "is_private": false,
+    "score": 10,
+    "published_at": "2026-03-04T02:26:30.847235",
+    "topics": []
+  }
+]

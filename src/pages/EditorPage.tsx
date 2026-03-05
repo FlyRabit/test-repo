@@ -1,10 +1,12 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useStore } from '../store/useStore';
-import { Plus } from 'lucide-react';
+import { api } from '../services/api';
+import { Plus, Wand2, Loader2 } from 'lucide-react';
 import ArticleSelector from '../components/ArticleSelector';
 
 export default function EditorPage() {
   const { articles, currentArticle, setCurrentArticle, createArticle, updateArticle } = useStore();
+  const [beautifying, setBeautifying] = useState(false);
 
   useEffect(() => {
     if (!currentArticle && articles.length > 0) {
@@ -55,9 +57,34 @@ export default function EditorPage() {
               onChange={(e) => updateArticle(currentArticle.id, { content: e.target.value })}
               className="w-full h-64 px-4 py-3 rounded-xl border border-red-100 focus:border-[#fe2c55] focus:ring-2 focus:ring-red-100 outline-none transition-all resize-none"
             />
-            <p className="mt-2 text-xs text-gray-400">
-              当前字数：{currentArticle.content.length} 字
-            </p>
+            <div className="mt-2 flex items-center justify-between">
+              <p className="text-xs text-gray-400">
+                当前字数：{currentArticle.content.length} 字
+              </p>
+              <button
+                onClick={async () => {
+                  if (beautifying || !currentArticle.content.trim()) return;
+                  setBeautifying(true);
+                  try {
+                    const res = await api.ai.beautify(
+                      `标题：${currentArticle.title}\n正文：${currentArticle.content}`
+                    );
+                    const d = res.data;
+                    const tags = d.tags?.length ? '\n\n' + d.tags.map((t: string) => `#${t}#`).join(' ') : '';
+                    updateArticle(currentArticle.id, { title: d.title, content: d.content + tags });
+                  } catch {
+                    alert('AI 美化失败，请检查 GEMINI_API_KEY 是否配置');
+                  } finally {
+                    setBeautifying(false);
+                  }
+                }}
+                disabled={beautifying || !currentArticle.content.trim()}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-[#fe2c55] bg-red-50 hover:bg-red-100 rounded-lg transition-colors disabled:opacity-50"
+              >
+                {beautifying ? <Loader2 size={14} className="animate-spin" /> : <Wand2 size={14} />}
+                AI 美化文案
+              </button>
+            </div>
           </div>
         </div>
       </div>
